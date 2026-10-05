@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Открытка с Днём учителя</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(145deg, #f9e7d4 0%, #f1d5b0 100%);
+        font-family: 'Segoe UI', 'Arial', sans-serif;
+        padding: 16px;
+        overflow-x: hidden;
+        background-image: url('rozi.png');
+    background-size: cover;        /* растянуть, сохраняя пропорции */
+    background-position: center;   /* центрировать */
+    background-repeat: no-repeat;
+    background-attachment: fixed;  /* фон не скроллится */
+    min-height: 100vh;        
+    }
+
+    .book-container {
+        perspective: 2500px;
+        width: 320px;
+        height: 480px;
+        position: relative;
+        transition: transform 2.5s cubic-bezier(0.23, 1, 0.32, 1);
+        transform-origin: center center;
+    }
+
+    .book-container.open {
+        transform: translateX(80px) scale(0.5);
+    }
+
+    .book {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+        cursor: pointer;
+    }
+
+    /* --- ПРАВАЯ СТРАНИЦА (картинка 3 на всю площадь + клетчатый блок с текстом) --- */
+    .page-right {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: #fcf8f0;
+        border-radius: 4px 16px 16px 4px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        backface-visibility: hidden;
+        z-index: 4;
+        border-left: 1px solid #e0d6c8;
+    }
+
+    /* Картинка занимает всю страницу */
+    .page-right-img {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+        background: #e8ddd0;
+    }
+
+    /* Клетчатый блок с текстом — по центру, поверх картинки.
+       Клетка: фон из двух линейных градиентов (гориз. и верт. линии). */
+    .greeting-card {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 82%;
+        max-height: 78%;
+        padding: 14px 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+
+        /* Клетчатый фон (тетрадный лист) */
+        background-color: #fdfcf5;
+        background-image:
+            linear-gradient(rgba(120, 170, 210, 0.35) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(120, 170, 210, 0.35) 1px, transparent 1px);
+        background-size: 12px 12px;
+        background-position: -1px -1px;
+
+        border: 1px solid rgba(120, 170, 210, 0.5);
+        border-radius: 6px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .greeting-card .name-placeholder {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #b3541e;
+        margin-bottom: 5px;
+        font-style: italic;
+    }
+
+    .greeting-card .message {
+        font-size: 0.78rem;
+        line-height: 1.45;
+        color: #3d2f22;
+    }
+
+    .greeting-card .signature {
+        margin-top: 6px;
+        font-size: 0.72rem;
+        color: #8a7a6a;
+        font-style: italic;
+    }
+
+    /* --- ОБЛОЖКА (картинка 1 → картинка 2 на середине) --- */
+    .cover {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        transform-style: preserve-3d;
+        transform-origin: left center;
+        z-index: 10;
+        transform: rotateY(0deg);
+    }
+
+    .cover-flip {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        transform-origin: center center;
+        transform: scaleX(1);
+    }
+
+    .cover-img {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        border-radius: 8px 16px 16px 8px;
+        backface-visibility: visible;
+        background: #8B5A2B;
+        transition: opacity 0.01s linear,
+                    box-shadow 2.5s ease,
+                    border-radius 2.5s ease;
+    }
+
+    .cover-img-front { opacity: 1; z-index: 2; }
+    .cover-img-back  { opacity: 0; z-index: 1; }
+
+    .cover-img-front {
+        box-shadow:
+            0 16px 40px rgba(0, 0, 0, 0.3),
+            0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    }
+
+    /* --- АНИМАЦИЯ ОТКРЫТИЯ --- */
+    .book-container.open .cover {
+        animation: coverTurn 2.5s ease-in-out forwards;
+    }
+    .book-container.open .cover-flip {
+        animation: coverMirror 2.5s steps(1, end) forwards;
+    }
+    .book-container.open .cover-img-front {
+        animation: fadeOutAtHalf 2.5s steps(1, end) forwards;
+    }
+    .book-container.open .cover-img-back {
+        animation: fadeInAtHalf 2.5s steps(1, end) forwards;
+    }
+    .book-container.open .cover-img-back {
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        border-radius: 16px 4px 4px 16px;
+    }
+
+    @keyframes coverTurn {
+        from { transform: rotateY(0deg); }
+        to   { transform: rotateY(-180deg); }
+    }
+    @keyframes coverMirror {
+        0%, 49.99% { transform: scaleX(1); }
+        50%, 100%  { transform: scaleX(-1); }
+    }
+    @keyframes fadeOutAtHalf {
+        0%, 49.99% { opacity: 1; }
+        50%, 100%  { opacity: 0; }
+    }
+    @keyframes fadeInAtHalf {
+        0%, 49.99% { opacity: 0; }
+        50%, 100%  { opacity: 1; }
+    }
+
+    /* --- АНИМАЦИЯ ЗАКРЫТИЯ --- */
+    .book-container.closing .cover {
+        animation: coverTurnBack 2.5s ease-in-out forwards;
+    }
+    .book-container.closing .cover-flip {
+        animation: coverMirrorBack 2.5s steps(1, end) forwards;
+    }
+    .book-container.closing .cover-img-front {
+        animation: fadeInAtHalf 2.5s steps(1, end) forwards;
+    }
+    .book-container.closing .cover-img-back {
+        animation: fadeOutAtHalf 2.5s steps(1, end) forwards;
+    }
+
+    @keyframes coverTurnBack {
+        from { transform: rotateY(-180deg); }
+        to   { transform: rotateY(0deg); }
+    }
+    @keyframes coverMirrorBack {
+        0%, 49.99% { transform: scaleX(-1); }
+        50%, 100%  { transform: scaleX(1); }
+    }
+
+    /* Подсказка */
+    .hint {
+        position: absolute;
+        bottom: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.85rem;
+        color: black;
+        background-color: white;
+        white-space: nowrap;
+        opacity: 0.9;
+        transition: opacity 0.4s;
+        pointer-events: none;
+    }
+    .hint.hidden { opacity: 0; }
+
+    .book-container:not(.open):hover { transform: scale(1.02); }
+
+    .book-container:not(.open):hover .cover-img-front {
+        box-shadow:
+            0 20px 50px rgba(0, 0, 0, 0.35),
+            0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+    }
+</style>
+</head>
+<body>
+
+<div class="book-container" id="bookContainer">
+    <div class="book">
+
+        <!-- ПРАВАЯ СТРАНИЦА: картинка 3 на всю площадь + клетчатый блок с текстом -->
+        <div class="page-right">
+            <img
+                class="page-right-img"
+                src="algebra2.png"
+                data-fallback="3"
+                alt="Правая страница"
+            >
+            <div class="greeting-card">
+                <div class="message">
+                    <h1>С днём учителя, Любовь Михайловна!</h1><br>
+                    <h2>Пусть каждый день<br>
+                    приносит радость!</h2><br>
+                </div>
+                <div class="signature"><h3>От вашего ученика</h3></div>
+            </div>
+        </div>
+
+        <!-- ОБЛОЖКА + ЛЕВАЯ СТРАНИЦА -->
+        <div class="cover">
+            <div class="cover-flip">
+                <!-- Картинка 1 — обложка, видна по умолчанию -->
+                <img
+                    class="cover-img cover-img-front"
+                    src="obl.jpg"
+                    data-fallback="1"
+                    alt="Обложка книги"
+                >
+                <!-- Картинка 2 — левая страница, станет видна после середины -->
+                <img
+                    class="cover-img cover-img-back"
+                    src="algebra1.png"
+                    data-fallback="2"
+                    alt="Левая страница"
+                >
+            </div>
+        </div>
+
+    </div>
+
+    <div class="hint" id="hint"><h2>Нажмите на учебник, чтобы открыть.</h2></div>
+</div>
+
+<script>
+(function () {
+    const container = document.getElementById('bookContainer');
+    const hint = document.getElementById('hint');
+
+    const DURATION = 2500;
+    let animating = false;
+
+    function openBook() {
+        if (animating) return;
+        animating = true;
+
+        container.classList.remove('closing');
+        void container.offsetWidth;
+        container.classList.add('open');
+        hint.classList.add('hidden');
+
+        setTimeout(() => { animating = false; }, DURATION);
+    }
+
+    function closeBook() {
+        if (animating) return;
+        if (!container.classList.contains('open')) return;
+        animating = true;
+
+        container.classList.remove('open');
+        void container.offsetWidth;
+        container.classList.add('closing');
+        hint.classList.remove('hidden');
+
+        setTimeout(() => {
+            container.classList.remove('closing');
+            animating = false;
+        }, DURATION);
+    }
+
+    container.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (container.classList.contains('open')) {
+            closeBook();
+        } else {
+            openBook();
+        }
+    });
+
+    document.addEventListener('click', function () {
+        if (container.classList.contains('open')) {
+            closeBook();
+        }
+    });
+
+    // Заглушка: если картинка не загрузилась — серый фон и номер
+    document.querySelectorAll('img').forEach((img, index) => {
+        img.addEventListener('error', function () {
+            this.style.background = '#b8a89a';
+            this.alt = this.dataset.fallback || String(index + 1);
+        });
+    });
+})();
+</script>
+
+</body>
+</html>
